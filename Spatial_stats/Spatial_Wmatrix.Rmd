@@ -19,13 +19,13 @@ knitr::opts_chunk$set(eval = TRUE)
 ### Installing and loading necessary packages
 
 ```{r, message=FALSE, warning=TRUE}
-# X11.options(type = "cairo")
-# setting a seed so we always have the same results for sampling
+### X11.options(type = "cairo")
+### setting a seed so we always have the same results for sampling
 set.seed(1234)
 if (!"pacman" %in% installed.packages()[, 1]) {
   install.packages("pacman")
 }
-# p_load works as install.packages (if needed) and library and once
+### p_load works as install.packages (if needed) and library and once
 pacman::p_load(
   spdep,
   rgdal,
@@ -45,23 +45,23 @@ pacman::p_load(
 ### Data
 
 ```{r, message=FALSE, warning=FALSE}
-# It is important to understand that shapefile is a simple folder with a collection of files.
-# For example a folder `Panstwo` contains files:
-# list.files("Panstwo")
+### It is important to understand that shapefile is a simple folder with a collection of files.
+### For example a folder `Panstwo` contains files:
+### list.files("Panstwo")
 
-# reading maps with `rgdal::` package.
+### reading maps with `rgdal::` package.
 
 pl_raw <- readOGR("../Visualizations/Panstwo") # 1 jedn.
 voi_raw <- readOGR("../Visualizations/wojewodztwa") # 16 jedn.
 pov_raw <- readOGR("../Visualizations/powiaty") # 380 jedn.
 
-# Panel per poviat
+### Panel per poviat
 
-# reading data into dataframe
+### reading data into dataframe
 data_nts <- read.table("../Visualizations/data_nts4_2019.csv", sep = ";", dec = ",", header = TRUE)
 data_nts15 <- data_nts[data_nts$year == 2015, ]
 
-# Lubelskie district companies
+### Lubelskie district companies
 
 firms <- read.csv("../Visualizations/geoloc_data.csv", header = TRUE, dec = ",", sep = ";")
 ```
@@ -139,7 +139,7 @@ General rule:
 
 Sample codes in R – spatial weights matrix
 
-# Spatial weights matrix – contiguity matrix
+### Spatial weights matrix – contiguity matrix
 
 ```{r}
 cont.nb<-poly2nb(as(pov, "SpatialPolygons"))
@@ -149,7 +149,7 @@ cont.listw # summary of matrix
 
 
 
-# coordinates of nts4 units 
+### coordinates of nts4 units 
 #(geometric center of gravity)
 ```{r}
 
@@ -158,7 +158,7 @@ colnames(crds)<-c("cx", "cy")
 ```
 
 
-# plot of neighbourhood
+### plot of neighbourhood
 
 
 ```{r}
@@ -170,13 +170,13 @@ plot(cont.nb, crds, add=TRUE)
 
 ![](./images/nb1.png)
 
-# conversion to class matrix
+### conversion to class matrix
 ```{r}
 cont.mat<-nb2mat(cont.nb)
 cont.mat[1:10, 1:10]
 ```
 
-# spatial weights matrix – k nearest neighbours
+### spatial weights matrix – k nearest neighbours
 
 
 ```{r}
@@ -195,7 +195,7 @@ plot(nts4.knn.nb, crds, add=TRUE)
 
 ![](./images/nb2.png)
 
-# checking for matrix symmetry
+### checking for matrix symmetry
 
 ```{r}
 print(is.symmetric.nb(nts4.knn.nb))
@@ -204,13 +204,13 @@ print(is.symmetric.nb(nts4.sym.knn.nb))
 
 ```
 
-# knn as listw class
+### knn as listw class
 ```{r}
 nts4.sym.knn.listw<-nb2listw(nts4.sym.knn.nb)
 ```
 
 
-# spatial weights matrix – neighbours in radius of d km
+### spatial weights matrix – neighbours in radius of d km
 ```{r}
 conti30<-dnearneigh(crds, 0, 30,longlat=TRUE) # conti30 is nb class
 conti30.m<-nb2mat(conti30, zero.policy=TRUE)
@@ -226,7 +226,7 @@ plot(conti30, crds, add=TRUE)
 ![](./images/nb3.png)
 
 
-# let’s see who does not have a neighbour
+### let’s see who does not have a neighbour
 
 ```{r}
 a<-colMeans(t(conti30.m))
@@ -241,32 +241,36 @@ spplot(pov, "a")
 
 ![](./images/sp1.png)
 
-# at what distance all units have at least one neighbour?
+### at what distance all units have at least one neighbour?
 
-# implicitly k=1, list of closests neighbours
+### implicitly k=1, list of closests neighbours
 ```{r}
 kkk<-knn2nb(knearneigh(crds)) 
 ```
 
 
-# max of distances between clostests neighbours  we get distance
+### max of distances between clostests neighbours  we get distance
 ```{r}
 all<-max(unlist(nbdists(kkk, crds))) 
 ```
 
-# neighbours in radius of d km 
-# guaranted that all regions have at least one neighbor
+### neighbours in radius of d km 
+### guaranted that all regions have at least one neighbor
 
 ```{r}
 all.nb<-dnearneigh(crds, 0, all) 
 
-summary(all.nb, crds)
+#summary(all.nb, crds)
+plot_2png({
 plot(pov, border="grey") 
 plot(all.nb, crds, add=TRUE)
+}, "images/radius.png")
 conti.all<-nb2listw(all.nb)
 ```
 
-# spatial weights matrix - inverse distance matrix
+![](./images/radius.png)
+
+### spatial weights matrix - inverse distance matrix
 
 
 ```{r}
@@ -277,19 +281,19 @@ dist1<-lapply(dist, function(x) 1/x)  # object of listw class
 nts4.dist.listw<-nb2listw(nts4.nb, glist=dist1)  # listw class object – spatial weights according to distance criterion
 ```
 
-# converting to matrix class
+### converting to matrix class
 
 ```{r}
 dist.mat<-listw2mat(nts4.dist.listw)
-summary(dist.mat) # statistics of weights of all regions
+#summary(dist.mat) # statistics of weights of all regions
 ```
 
-# plot of inverse distance weights for single region
+### plot of inverse distance weights for single region
 ```{r}
 pov.df<-as.data.frame(pov)
-pov.df$jpt_nazwa # Warszawa is 151
-x<-dist.mat[,151]
-summary(x)
+#pov.df$jpt_nazwa # Warszawa is 151
+xx<-dist.mat[,151]
+#summary(xx)
 cols<-rev(heat.colors(11))
 ```
 
@@ -298,40 +302,44 @@ cols<-rev(heat.colors(11))
 
 ```{r}
 brks<-c(0, 0.001, 0.0015, 0.002, 0.0025, 0.003, 0.005, 0.01, 0.015, 0.02, 0.025)
-plot(pov, col=cols[findInterval(x, brks)])
+
+plot_2png({
+plot(pov, col=cols[findInterval(xx, brks)])
 plot(voi, add=TRUE, lwd=2)
 legend("bottomleft", legend=brks, pt.bg=cols, bty="n", pch=22, cex=0.8)
 title(main="Inverse distance weigths", sub="In legend intervals from….%")
+}, "images/breaks_eachvoi.png")
 ```
 
+![](./images/breaks_eachvoi.png)
 
-# summary of spatial weights matrix
+### summary of spatial weights matrix
 ```{r}
-summary(cont.nb) # matrix in nb class
+#summary(cont.nb) # matrix in nb class
 
 ```
 
 
 ```{r}
 cont.nb.listw<-nb2listw(cont.nb)
-summary(unlist(cont.nb.listw$weights))
+#summary(unlist(cont.nb.listw$weights))
 
 ```
 
 
 ```{r}
 cont.nb.mat<-nb2mat(cont.nb)
-summary(cont.nb.mat)
+#summary(cont.nb.mat)
 ```
 
 ```{r}
-table(card(cont.nb)) # cardinalities, listing possible number of links and counting observations for given level
+#table(card(cont.nb)) # cardinalities, listing possible number of links and counting observations for given level
 ```
 
 
 ```{r}
-print(cont.nb.mat)
-cont.listw$weights # lists spatial weights
+#print(cont.nb.mat)
+#cont.listw$weights # lists spatial weights
 
 ```
 
@@ -341,7 +349,7 @@ Task 1: Visualise distance of all poviats from Suwalki
 which_suwalki <- which(grepl("suwa", pov@data$jpt_nazwa_))
 crds <- coordinates(pov)
 
-dists <- sp::spDistsN1(crds, cords[which_suwalki,], longlat = TRUE)
+dists <- sp::spDistsN1(crds, crds[which_suwalki,], longlat = TRUE)
 
 plot_2png({
 choropleth(pov, dists)
@@ -377,6 +385,7 @@ plot(sym.a.nb, crds, add=TRUE)
 }, "images/ex2b.png")
 
 #nothing
+### they will be the same we could even check that matrix is already a symmetric one
 is.symmetric.nb(a.nb)
 ```
 
@@ -394,4 +403,6 @@ plot_2png({
 choropleth(pov, 1/weis)
 }, "images/ex3.png")
 ```
+
+![](./images/ex3.png)
 
